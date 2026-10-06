@@ -1,3 +1,51 @@
+
+Loading older messages…
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -84,7 +132,7 @@ main{max-width:1120px;margin:auto;padding:10px 22px 80px}
 .comment{background:rgba(255,255,255,.7);border:1px solid #ead9dd;padding:9px 11px;display:grid;grid-template-columns:auto 1fr;gap:9px}
 .comment-avatar{width:29px;height:29px;border-radius:50%;background:var(--pink);display:grid;place-items:center;border:1px solid #e5c5d0;font-size:14px}
 .comment-author{font-weight:bold;font-size:12px;color:var(--berry)}.comment-text{font-size:13px;line-height:1.45;margin-top:2px;white-space:pre-wrap}
-.comment-form{display:grid;grid-template-columns:95px 1fr auto;gap:6px}.comment-form input,.comment-form textarea{min-width:0;padding:8px 10px;font-size:12px}.comment-form textarea{min-height:38px;height:38px;resize:none}.comment-form button{border:1px solid var(--berry);background:var(--berry);color:#fff;border-radius:999px;padding:7px 11px;font-size:10px;text-transform:uppercase}
+.comment-form{display:grid;grid-template-columns:1fr auto;gap:6px}.comment-form input,.comment-form textarea{min-width:0;padding:8px 10px;font-size:12px}.comment-form textarea{min-height:38px;height:38px;resize:none}.comment-form button{border:1px solid var(--berry);background:var(--berry);color:#fff;border-radius:999px;padding:7px 11px;font-size:10px;text-transform:uppercase}
 @media(max-width:600px){.comment-form{grid-template-columns:1fr}.comment-form textarea{height:60px}}
 /* modal */
 .overlay{position:fixed;inset:0;background:rgba(48,40,43,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.overlay.show{display:flex}
@@ -115,6 +163,9 @@ input,textarea{width:100%;border:1px solid #d8c5ca;background:#fffaf7;padding:10
 .danger{border:1px solid #a34b60;background:#fff1f4;color:#9b425a;padding:9px 13px}.muted-btn{border:1px solid #cdbdc1;background:#fff;color:#67595d;padding:9px 13px}
 .settings-note{font-size:11px;color:#806b72;line-height:1.5}
 
+
+.password-wrap{position:relative;display:flex;align-items:center;margin-bottom:8px}.password-wrap input{flex:1;margin:0}.show-pass{margin-left:6px;white-space:nowrap;font-size:11px;padding:7px 9px;border:1px solid #ead9df;background:#fff;border-radius:999px;color:var(--berry);cursor:pointer}
+.username-row{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:end}.username-row input{margin:0}.username-change-note{font-size:11px;color:#8b6872;margin-top:5px}
 </style>
 </head>
 <body>
@@ -191,7 +242,7 @@ input,textarea{width:100%;border:1px solid #d8c5ca;background:#fffaf7;padding:10
     <img class="read-sticker" id="readSticker" alt=""><div class="body" id="readBody"></div>
     <div class="post-actions"><button id="letterLikeBtn" onclick="toggleLike()">♡ <span id="letterLikeCount">0</span> likes</button><span id="letterCommentCount" class="small"></span></div>
     <div class="comments-wrap"><h4>♡ Comments</h4><div class="comment-list" id="commentList"></div>
-      <div class="comment-form"><input id="commentName" maxlength="30" placeholder="Your name"><textarea id="commentText" maxlength="500" placeholder="Leave a comment..."></textarea><button onclick="addComment()">Post</button></div>
+      <div class="comment-form"><textarea id="commentText" maxlength="500" placeholder="${getCurrent()?`Commenting as @${esc(getCurrent().username)}`:`Log in to comment...`}"></textarea><button onclick="addComment()">Post</button></div>
     </div>
   </div>
 </div></div>
@@ -336,7 +387,7 @@ function renderLetterSocial(i){
   c.forEach(x=>{const e=document.createElement("div");e.className="comment";e.innerHTML=`<div class="comment-avatar">${esc(x.avatar||"♡")}</div><div><div class="comment-author">${esc(x.name)}</div><div class="comment-text">${esc(x.text)}</div></div>`;list.appendChild(e)})
 }
 function toggleLike(){if(currentLetterIndex===null)return;const a=getLikes(),k="letter_"+currentLetterIndex;a[k] ||= {count:0,liked:false};a[k].liked=!a[k].liked;a[k].count=Math.max(0,a[k].count+(a[k].liked?1:-1));setJSON("nikoleLikes",a);renderLetterSocial(currentLetterIndex)}
-function addComment(){if(currentLetterIndex===null)return;const n=document.getElementById("commentName").value.trim(),t=document.getElementById("commentText").value.trim();if(!n||!t)return toast("Add your name and comment ♡");const a=getComments();a[currentLetterIndex] ||= [];a[currentLetterIndex].push({name:n,text:t,avatar:["♡","୨୧","✧","❀"][Math.floor(Math.random()*4)]});saveComments(a);document.getElementById("commentText").value="";renderLetterSocial(currentLetterIndex)}
+function addComment(){if(currentLetterIndex===null)return;const me=getCurrent();if(!me)return openAccount();const t=document.getElementById("commentText").value.trim();if(!t)return toast("Write something first ♡");const a=getComments();a[currentLetterIndex] ||= [];a[currentLetterIndex].push({name:me.username,text:t,avatar:me.avatar||["♡","୨୧","✧","❀"][Math.floor(Math.random()*4)]});saveComments(a);document.getElementById("commentText").value="";renderLetterSocial(currentLetterIndex)}
 function sendLetter(){if(!isOwner())return toast("Only Nikole can send official letters.");const title=document.getElementById("letterTitle").value.trim(),body=document.getElementById("letterBody").value.trim();if(!title||!body)return toast("Give the letter a headline and some words ♡");const a=getLetters();a.unshift({title,body,sticker:selectedSticker,date:new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"})});saveLetters(a);document.getElementById("letterTitle").value="";document.getElementById("letterBody").value="";closeModal("composer");renderLetters();renderArchive();toast("Letter sent ♡")}
 function renderArchive(){const box=document.getElementById("archiveList"),a=getLetters();box.innerHTML=a.length?a.map((l,i)=>`<div class="archive-row"><div class="archive-date">${esc(l.date)}</div><div class="archive-title">${esc(l.title)}</div><button class="tiny" onclick="animateOpen(${i})">Read →</button></div>`).join(""):'<div class="empty"><p>Your archive will appear here after your first letter. ♡</p></div>'}
 
@@ -346,11 +397,11 @@ function renderAccount(){
   const u=getCurrent(),box=document.getElementById("accountContent");document.getElementById("accountHeading").textContent=u?"Account settings":"Member account";
   if(!u){
     box.innerHTML=`<div class="notice">Create a profile to post, follow people, comment, and customize your account.</div>
-    <div class="account-grid"><div><label>Username</label><input id="signupUser" maxlength="20" placeholder="yourname"></div><div><label>Password</label><input id="signupPass" type="password" maxlength="100" placeholder="8+ characters"></div></div>
+    <div class="account-grid"><div><label>Username</label><input id="signupUser" maxlength="20" placeholder="yourname"></div><div><label>Password</label><div class="password-wrap"><input id="signupPass" type="password" maxlength="100" placeholder="8+ characters"><button type="button" class="show-pass" onclick="togglePassword('signupPass',this)">Show</button></div></div></div>
     <label>Display name</label><input id="signupDisplay" maxlength="40" placeholder="Your display name">
     <div class="modal-actions"><button class="primary" onclick="signup()">CREATE PROFILE</button></div>
     <hr style="border:0;border-top:1px solid #ead9df;margin:20px 0"><h3 style="color:var(--berry)">Already have an account?</h3>
-    <label>Username</label><input id="loginUser"><label>Password</label><input id="loginPass" type="password"><div class="modal-actions"><button class="primary" onclick="login()">LOG IN</button></div>
+    <label>Username</label><input id="loginUser"><label>Password</label><div class="password-wrap"><input id="loginPass" type="password"><button type="button" class="show-pass" onclick="togglePassword('loginPass',this)">Show</button></div><div class="modal-actions"><button class="primary" onclick="login()">LOG IN</button></div>
     <button class="tiny" onclick="forgotPassword()" style="margin-top:5px">Forgot / reset password</button>`;
     return;
   }
@@ -358,7 +409,7 @@ function renderAccount(){
   box.innerHTML=`<div class="user-card">${avatarHTML(u)}<div><b>@${esc(u.username)}</b><div class="small">${esc(u.display||u.username)}</div></div></div>
   <div class="settings-section"><h3>Profile</h3>
     <label>Profile picture</label><input type="file" id="profilePicUpload" accept="image/*" onchange="uploadProfilePicture(event)">
-    <label>Display name</label><input id="editDisplay" maxlength="40" value="${esc(u.display||u.username)}">
+    <label>Username</label><div class="username-row"><input id="editUsername" maxlength="20" value="${esc(u.username)}" ${isOwner()?"readonly":""}><button type="button" class="tiny" onclick="changeUsername()">CHANGE</button></div><div class="username-change-note">${isOwner()?"The owner username is fixed.":"You can change your username once every 10 days."}</div><label>Display name</label><input id="editDisplay" maxlength="40" value="${esc(u.display||u.username)}">
     <label>Bio</label><textarea id="editBio" style="min-height:90px">${esc(u.bio||"")}</textarea>
     <div class="modal-actions"><button class="primary" onclick="saveProfile()">SAVE PROFILE</button><button class="muted-btn" onclick="showProfile('${esc(u.username)}')">VIEW MY PROFILE</button></div>
   </div>
@@ -369,7 +420,7 @@ function renderAccount(){
     <div class="modal-actions"><button class="primary" onclick="savePrivacy()">SAVE PRIVACY</button></div>
   </div>
   <div class="settings-section"><h3>Follow requests</h3><div id="requestList">${renderRequestsHTML(requests)}</div></div>
-  <div class="settings-section"><h3>Password</h3><label>Current password</label><input id="currentPassword" type="password"><label>New password</label><input id="newPassword" type="password"><div class="modal-actions"><button class="muted-btn" onclick="changePassword()">CHANGE PASSWORD</button><button class="tiny" onclick="forgotPassword()">RESET PASSWORD</button></div><div class="settings-note">In the real website, password reset will be email-verified. This standalone HTML uses local demo storage only.</div></div>
+  <div class="settings-section"><h3>Password</h3><label>Current password</label><div class="password-wrap"><input id="currentPassword" type="password"><button type="button" class="show-pass" onclick="togglePassword('currentPassword',this)">Show</button></div><label>New password</label><div class="password-wrap"><input id="newPassword" type="password"><button type="button" class="show-pass" onclick="togglePassword('newPassword',this)">Show</button></div><div class="modal-actions"><button class="muted-btn" onclick="changePassword()">CHANGE PASSWORD</button><button class="tiny" onclick="forgotPassword()">RESET PASSWORD</button></div><div class="settings-note">In the real website, password reset will be email-verified. This standalone HTML uses local demo storage only.</div></div>
   <div class="settings-section"><h3>Account</h3><button class="danger" onclick="deleteAccount()">DELETE ACCOUNT</button><div class="settings-note">This permanently removes this demo account and its posts from this browser.</div></div>
   <div class="modal-actions"><button class="cancel" onclick="logout()">LOG OUT</button></div>`;
   document.getElementById("defaultAudience").value=u.defaultAudience||"public";
@@ -388,7 +439,35 @@ function login(){
 }
 function logout(){setCurrent(null);closeModal("account");refreshAll();toast("Logged out")}
 function saveProfile(){
-  const me=getCurrent();if(!me)return;me.display=document.getElementById("editDisplay").value.trim()||me.username;me.bio=document.getElementById("editBio").value.trim();const a=getUsers().map(x=>x.username===me.username?me:x);saveUsers(a);setCurrent(me);refreshAll();toast("Profile saved ♡")
+  const me=getCurrent();if(!me)return;
+  me.display=document.getElementById("editDisplay").value.trim()||me.username;
+  me.bio=document.getElementById("editBio").value.trim();
+  const a=getUsers().map(x=>x.username===me.username?me:x);saveUsers(a);setCurrent(me);refreshAll();toast("Profile saved ♡")
+}
+function togglePassword(id,btn){const input=document.getElementById(id);if(!input)return;const show=input.type==="password";input.type=show?"text":"password";btn.textContent=show?"Hide":"Show"}
+function changeUsername(){
+  const me=getCurrent();if(!me||isOwner())return;
+  const old=me.username,now=document.getElementById("editUsername").value.trim().toLowerCase().replace(/[^a-z0-9_]/g,"");
+  if(!now||now.length<3)return toast("Use a 3+ character username.");
+  if(now===old)return toast("That is already your username.");
+  if(now==="nikole"||getUsers().some(u=>u.username===now))return toast("That username is already taken.");
+  const last=me.usernameChangedAt||0;
+  if(Date.now()-last<10*24*60*60*1000){
+    const days=Math.ceil((10*24*60*60*1000-(Date.now()-last))/(24*60*60*1000));
+    return toast(`You can change your username again in ${days} day${days===1?"":"s"} ♡`);
+  }
+  const users=getUsers(); const updated={...me,username:now,usernameChangedAt:Date.now()};
+  saveUsers(users.map(u=>u.username===old?updated:u));
+  const follows=getFollows(); if(follows[old]){follows[now]=follows[old];delete follows[old]}
+  Object.keys(follows).forEach(k=>{follows[k]=(follows[k]||[]).map(x=>x===old?now:x)});saveFollows(follows);
+  const pending=getPending(); if(pending[old]){pending[now]=pending[old];delete pending[old]}
+  Object.keys(pending).forEach(k=>{pending[k]=(pending[k]||[]).map(x=>x===old?now:x)});savePending(pending);
+  const blocks=getBlocks(); if(blocks[old]){blocks[now]=blocks[old];delete blocks[old]}
+  Object.keys(blocks).forEach(k=>{blocks[k]=(blocks[k]||[]).map(x=>x===old?now:x)});saveBlocks(blocks);
+  savePosts(getPosts().map(p=>p.user===old?{...p,user:now}:p));
+  savePostComments(getPostComments());
+  const comments=getComments();Object.keys(comments).forEach(k=>comments[k]=(comments[k]||[]).map(c=>c.name===old?{...c,name:now}:c));saveComments(comments);
+  setCurrent(updated);renderAccount();refreshAll();toast("Username changed ♡");
 }
 function uploadProfilePicture(e){
   const f=e.target.files?.[0];if(!f)return;if(f.size>4*1024*1024)return toast("Please choose an image under 4 MB.");
@@ -401,8 +480,17 @@ function changePassword(){
   const me=getCurrent(),old=document.getElementById("currentPassword").value,nw=document.getElementById("newPassword").value;if(!me)return;if(old!==me.password)return toast("Current password is incorrect.");if(nw.length<8)return toast("New password must be at least 8 characters.");me.password=nw;saveUsers(getUsers().map(x=>x.username===me.username?me:x));setCurrent(me);document.getElementById("currentPassword").value="";document.getElementById("newPassword").value="";toast("Password changed ♡")
 }
 function forgotPassword(){
-  const username=prompt("For this standalone demo, enter your username.");if(!username)return;const u=getUsers().find(x=>x.username===username.trim().toLowerCase());if(!u)return toast("No account found.");
-  const nw=prompt("Enter a new password (8+ characters).");if(!nw||nw.length<8)return toast("Password was not changed.");u.password=nw;saveUsers(getUsers().map(x=>x.username===u.username?u:x));toast("Demo password reset ♡")
+  const box=document.getElementById("accountContent");
+  box.innerHTML=`<h3 style="color:var(--berry)">Reset password</h3>
+  <label>Username</label><input id="resetUser" placeholder="your username">
+  <label>New password</label><div class="password-wrap"><input id="resetPass" type="password" minlength="8" placeholder="8+ characters"><button type="button" class="show-pass" onclick="togglePassword('resetPass',this)">Show</button></div>
+  <div class="modal-actions"><button class="primary" onclick="doPasswordReset()">RESET PASSWORD</button><button class="cancel" onclick="renderAccount()">CANCEL</button></div>
+  <div class="settings-note">This standalone demo does not send reset emails. The real website should use verified email/password recovery.</div>`;
+}
+function doPasswordReset(){
+  const username=document.getElementById("resetUser").value.trim().toLowerCase(),nw=document.getElementById("resetPass").value,u=getUsers().find(x=>x.username===username);
+  if(!u)return toast("No account found.");if(nw.length<8)return toast("New password must be at least 8 characters.");
+  u.password=nw;saveUsers(getUsers().map(x=>x.username===u.username?u:x));toast("Password reset ♡");renderAccount();
 }
 function deleteAccount(){
   const me=getCurrent();if(!me)return;if(me.username===OWNER_USERNAME)return toast("The site owner account cannot be deleted here.");
@@ -542,3 +630,5 @@ renderLetters();renderArchive();renderSocial();renderSidebar();renderModerationL
 </script>
 </body>
 </html>
+
+
