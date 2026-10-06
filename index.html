@@ -273,7 +273,7 @@ function getCustomStickers(){return getJSON("nikoleCustomStickers",[])}
 function saveCustomStickers(v){setJSON("nikoleCustomStickers",v)}
 
 function userByName(username){return getUsers().find(u=>u.username===username)}
-function isOwner(){return getCurrent()?.username===OWNER_USERNAME}
+function isOwner(){const u=getCurrent();return !!u&&(u.username===OWNER_USERNAME||u.owner===true)}
 function followingOf(username){return getFollows()[username]||[]}
 function followersOf(username){const out=[];for(const [from,list] of Object.entries(getFollows()))if(list.includes(username))out.push(from);return out}
 function isFollowing(me,target){return followingOf(me).includes(target)}
@@ -345,7 +345,7 @@ function openAccount(){renderAccount();openModal("account")}
 function renderAccount(){
   const u=getCurrent(),box=document.getElementById("accountContent");document.getElementById("accountHeading").textContent=u?"Account settings":"Member account";
   if(!u){
-    box.innerHTML=`<div class="notice">Create a profile to post, follow people, comment, and customize your account.</div>
+    box.innerHTML=`<div class="notice">Create a profile to post, follow people, comment, and customize your account.</div><div class="settings-note" style="margin:8px 0">Site owner: log in as <b>@nikole</b> to access the official letter board, sticker manager, and moderation tools. First-run owner password: <b>nikole-owner-change-me</b>. Change it immediately in Account settings.</div>
     <div class="account-grid"><div><label>Username</label><input id="signupUser" maxlength="20" placeholder="yourname"></div><div><label>Password</label><input id="signupPass" type="password" maxlength="100" placeholder="8+ characters"></div></div>
     <label>Display name</label><input id="signupDisplay" maxlength="40" placeholder="Your display name">
     <div class="modal-actions"><button class="primary" onclick="signup()">CREATE PROFILE</button></div>
@@ -384,7 +384,7 @@ function signup(){
 }
 function login(){
   const username=document.getElementById("loginUser").value.trim().toLowerCase(),password=document.getElementById("loginPass").value,u=getUsers().find(x=>x.username===username&&x.password===password);
-  if(!u)return toast("That login didn't match.");setCurrent(u);closeModal("account");refreshAll();toast("Welcome back ♡")
+  if(!u)return toast("That login didn't match.");if(u.username===OWNER_USERNAME)u.owner=true;saveUsers(getUsers().map(x=>x.username===u.username?u:x));setCurrent(u);closeModal("account");refreshAll();toast("Welcome back ♡")
 }
 function logout(){setCurrent(null);closeModal("account");refreshAll();toast("Logged out")}
 function saveProfile(){
@@ -523,6 +523,19 @@ function ensurePostAudienceControl(){
   const actions=modal.querySelector(".modal-actions");const wrap=document.createElement("div");wrap.innerHTML=`<label>Who can see it?</label><select class="select-clean" id="postAudience"><option value="public">Everyone</option><option value="followers">Followers only</option><option value="friends">Friends only (mutual follows)</option></select>`;modal.insertBefore(wrap,actions)
 }
 ensurePostAudienceControl();
+/* OWNER BOOTSTRAP */
+function ensureOwnerAccount(){
+  const users=getUsers();
+  let owner=users.find(u=>u.username===OWNER_USERNAME);
+  if(!owner){
+    owner={username:OWNER_USERNAME,display:"Nikole",bio:"♡",password:"nikole-owner-change-me",avatar:"",private:false,followingPublic:true,defaultAudience:"public",owner:true};
+    users.push(owner); saveUsers(users);
+  }else if(!owner.owner){
+    owner.owner=true; saveUsers(users.map(u=>u.username===OWNER_USERNAME?owner:u));
+  }
+}
+ensureOwnerAccount();
+
 document.getElementById("heroDeer").src=ASSETS.deer;document.getElementById("heroCupid").src=ASSETS.cupid;
 renderLetters();renderArchive();renderSocial();renderSidebar();renderModerationLink();
 
